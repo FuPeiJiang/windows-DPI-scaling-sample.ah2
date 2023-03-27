@@ -9,6 +9,7 @@ SetWorkingDir A_ScriptDir ; Ensures a consistent starting directory.
 
 DPI_ENUM:=
 {
+dpi_recommended:-1,
 dpi_100:0,
 dpi_125:1,
 dpi_150:2,
@@ -24,7 +25,7 @@ dpi_500:11,
 }
 
 
-setDPI(monitorFriendlyDeviceName, dpi_enum_value) {
+setDPI(monitorDevicePath, dpi_enum_value) {
     DllCall("GetDisplayConfigBufferSizes", "Uint",0x00000002, "Uint*",&pathsCount:=0, "Uint*",&modesCount:=0) ;0x00000002=QDC_ONLY_ACTIVE_PATHS
     DISPLAYCONFIG_PATH_INFO_arr:=Buffer(72*pathsCount)
     DISPLAYCONFIG_MODE_INFO_arr:=Buffer(64*modesCount)
@@ -43,9 +44,10 @@ setDPI(monitorFriendlyDeviceName, dpi_enum_value) {
         NumPut("Uint64",adapterID,DISPLAYCONFIG_TARGET_DEVICE_NAME,8)
         NumPut("Uint",targetID,DISPLAYCONFIG_TARGET_DEVICE_NAME,16)
         DllCall("DisplayConfigGetDeviceInfo", "Ptr",DISPLAYCONFIG_TARGET_DEVICE_NAME)
-        temp_monitorFriendlyDeviceName:=StrGet(DISPLAYCONFIG_TARGET_DEVICE_NAME.Ptr + 36, "UTF-16")
+        temp_monitorDevicePath:=StrGet(DISPLAYCONFIG_TARGET_DEVICE_NAME.Ptr + 164, "UTF-16")
 
-        if (temp_monitorFriendlyDeviceName==monitorFriendlyDeviceName) {
+        if (temp_monitorDevicePath==monitorDevicePath) {
+
             DISPLAYCONFIG_SOURCE_DPI_SCALE_GET:=Buffer(32)
             NumPut("Int",-3,DISPLAYCONFIG_SOURCE_DPI_SCALE_GET,0) ;-3=DISPLAYCONFIG_DEVICE_INFO_GET_DPI_SCALE
             NumPut("Uint",DISPLAYCONFIG_SOURCE_DPI_SCALE_GET.Size,DISPLAYCONFIG_SOURCE_DPI_SCALE_GET,4)
@@ -53,8 +55,11 @@ setDPI(monitorFriendlyDeviceName, dpi_enum_value) {
             NumPut("Uint",sourceID,DISPLAYCONFIG_SOURCE_DPI_SCALE_GET,16)
             DllCall("DisplayConfigGetDeviceInfo", "Ptr",DISPLAYCONFIG_SOURCE_DPI_SCALE_GET)
             minScaleRel:=NumGet(DISPLAYCONFIG_SOURCE_DPI_SCALE_GET, 20, "Int")
-            ; there should be an Abs() here but I'm omitting it..
-            dpiRelativeVal:=dpi_enum_value - minScaleRel
+            recommendedDpi:=Abs(minScaleRel)
+            dpiRelativeVal:=0
+            if (dpi_enum_value!==-1) {
+                dpiRelativeVal:=dpi_enum_value - recommendedDpi
+            }
 
 
             DISPLAYCONFIG_SOURCE_DPI_SCALE_SET:=Buffer(24)
@@ -73,6 +78,7 @@ setDPI(monitorFriendlyDeviceName, dpi_enum_value) {
     }
 }
 setDPI("", DPI_ENUM.dpi_150)
+; setDPI("", DPI_ENUM.dpi_recommended)
 
 
 Exitapp

@@ -26,9 +26,9 @@ while (i_ < end) {
     NumPut("Uint64",adapterID,DISPLAYCONFIG_TARGET_DEVICE_NAME,8)
     NumPut("Uint",targetID,DISPLAYCONFIG_TARGET_DEVICE_NAME,16)
     DllCall("DisplayConfigGetDeviceInfo", "Ptr",DISPLAYCONFIG_TARGET_DEVICE_NAME)
-    monitorFriendlyDeviceName:=StrGet(DISPLAYCONFIG_TARGET_DEVICE_NAME.Ptr + 36, "UTF-16")
+    monitorDevicePath:=StrGet(DISPLAYCONFIG_TARGET_DEVICE_NAME.Ptr + 164, "UTF-16")
 
-    finalStr.=monitorFriendlyDeviceName "`n"
+    finalStr.=monitorDevicePath "`n"
 
     i_+=72
 }
